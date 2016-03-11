@@ -1,10 +1,11 @@
 require 'byebug'
 
 class Tile
-
+  attr_accessor :face_up
   def initialize(board)
     @board = board
     @bomb = false
+    @face_up = false
   end
 
   def set_bomb
@@ -15,14 +16,18 @@ class Tile
     @bomb
   end
 
+  def reveal
+    @face_up = true
+  end
 end
 
 class Board
-  attr_accessor :grid
+  attr_accessor :grid, :bomb_found
   def initialize(width, height)
     @grid = Array.new(width) do
       Array.new(height)
     end
+    @bomb_found = false
     populate
   end
 
@@ -45,10 +50,21 @@ class Board
   def render
     grid.each do |row|
       row.each do |tile|
-        (tile.bomb?) ? (print " X ") : (print " O ")
+        if tile.face_up
+          (tile.bomb?) ? (print " X ") : (print " O ")
+        else
+          print " _ "
+        end
       end
       puts ""
     end
+    puts ""
+  end
+
+  def handle_move(input)
+    x,y = input
+    grid[x][y].reveal
+    @bomb_found = true if @grid[x][y].bomb?
   end
 
 end
@@ -82,17 +98,20 @@ class Game
       board.render
       play_turn
     end
+    board.render
+    puts "Kaboom"
   end
 
   def over?
-
+    @board.bomb_found
   end
 
   def play_turn
     puts "What space do you want to check? x,y"
     input = gets.chomp.split(",").map(&:to_i)
+    @board.handle_move(input)
   end
 
 end
-g = Game.new(4,5, 2)
-g.set_up_bombs
+g = Game.new(4,5, 18)
+g.play
